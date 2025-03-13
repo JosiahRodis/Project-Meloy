@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal-oy - your Nutrition tracker<3 </title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    :root {
+      --primary: #5d9b6c;
+      --primary-light: #7db78a;
+      --primary-dark: #3d7c4c;
+      --secondary: #f8bc5a;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --danger: #e74c3c;
+      --success: #2ecc71;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f5f7fa;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+    }
+    
+    .food-search {
+      margin-bottom: 2rem;
+    }
+    
+    .food-search input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 16px;
+    }
+    
+    .search-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 16px;
+      width: 100%;
+    }
+    
+    .search-btn:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .food-items {
+      margin-top: 1rem;
+    }
+    
+    .food-item {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: grab;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .food-item:hover {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary-light);
+    }
+    
+    .food-item.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    
+    .food-item-details span {
+      display: block;
+      font-size: 12px;
+      color: #777;
+    }
+    
+    .food-item-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .add-btn {
+      background-color: var(--secondary);
+      color: var(--dark);
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .add-btn:hover {
+      background-color: #eaae47;
+    }
+    
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    
+    .nutrition-charts {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+    }
+    
+    .chart-container {
+      height: 750px;
+      margin-top: 1rem;
+    }
+    
+    .meal-planner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .meal-planner {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .meal-section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      min-height: 200px;
+    }
+    
+    .meal-section h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-light);
+    }
+    
+    .meal-foods {
+      min-height: 150px;
+    }
+    
+    .meal-food-item {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .remove-btn {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .remove-btn:hover {
+      background-color: #c0392b;
+    }
+    
+    .nutrition-summary {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .nutrition-summary h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-light);
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .summary-item {
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      padding: 1rem;
+      text-align: center;
+    }
+    
+    .summary-item h4 {
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+    
+    .summary-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+    }
+    
+    .summary-target {
+      font-size: 0.8rem;
+      color: #777;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background-color: #eee;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background-color: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-fill.over {
+      background-color: var(--danger);
+    }
+    
+    .dragging {
+      opacity: 0.4;
+    }
+    
+    .food-database-note {
+      font-size: 12px;
+      color: #777;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Meal-oy - your Nutrition tracker<3</h1>
+    <p>Daw inde kamo kabalo mag budget pagkaon bala - mama</p>
+  </header>
+  
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="food-search">
+        <h3>Search Filipino Foods</h3>
+        <input type="text" id="food-search-input" placeholder="e.g., Rice, Adobo, Sinigang...">
+        <button class="search-btn" id="search-food-btn">Search</button>
+        <p class="food-database-note">Uses a pre-loaded database of common Filipino foods</p>
+      </div>
+      
+      <div class="food-items" id="food-items-container">
+        <!-- Food items will be populated here -->
+      </div>
+    </div>
+    
+    <div class="main-content">
+      <div class="nutrition-charts">
+        <h3>Nutrition Overview</h3>
+        <div class="chart-container">
+          <canvas id="nutrition-chart"></canvas>
+        </div>
+      </div>
+      
+      <div class="meal-planner">
+        <div class="meal-section" id="breakfast-section">
+          <h3>Breakfast</h3>
+          <div class="meal-foods" id="breakfast-foods"></div>
+        </div>
+        
+        <div class="meal-section" id="lunch-section">
+          <h3>Lunch</h3>
+          <div class="meal-foods" id="lunch-foods"></div>
+        </div>
+        
+        <div class="meal-section" id="dinner-section">
+          <h3>Dinner</h3>
+          <div class="meal-foods" id="dinner-foods"></div>
+        </div>
+      </div>
+      
+      <div class="nutrition-summary">
+        <h3>Daily Nutrition Summary</h3>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <h4>Calories</h4>
+            <div class="summary-value" id="calories-value">0</div>
+            <div class="summary-target">of 2000 kcal</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="calories-progress" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <h4>Protein</h4>
+            <div class="summary-value" id="protein-value">0g</div>
+            <div class="summary-target">of 50g</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="protein-progress" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <h4>Carbs</h4>
+            <div class="summary-value" id="carbs-value">0g</div>
+            <div class="summary-target">of 300g</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="carbs-progress" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <h4>Fat</h4>
+            <div class="summary-value" id="fat-value">0g</div>
+            <div class="summary-target">of 65g</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="fat-progress" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <h4>Vitamin A</h4>
+            <div class="summary-value" id="vitamin-a-value">0%</div>
+            <div class="summary-target">Daily Value</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="vitamin-a-progress" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="summary-item">
+            <h4>Vitamin C</h4>
+            <div class="summary-value" id="vitamin-c-value">0%</div>
+            <div class="summary-target">Daily Value</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="vitamin-c-progress" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Filipino Food Database (simplified with nutrition data)
+    const filipinoFoods = [
+      {
+        name: "White Rice (100g, cooked)",
+        calories: 130,
+        protein: 2.7,
+        carbs: 28.2,
+        fat: 0.3,
+        vitaminA: 0,
+        vitaminC: 0,
+        serving: "100g"
+      },
+      {
+        name: "Chicken Adobo (100g)",
+        calories: 234,
+        protein: 18.6,
+        carbs: 3.2,
+        fat: 16.8,
+        vitaminA: 2,
+        vitaminC: 5,
+        serving: "100g"
+      },
+      {
+        name: "Sinigang na Baboy (100g)",
+        calories: 120,
+        protein: 12.5,
+        carbs: 5.8,
+        fat: 5.2,
+        vitaminA: 10,
+        vitaminC: 25,
+        serving: "100g"
+      },
+      {
+        name: "Pancit Canton (100g)",
+        calories: 180,
+        protein: 5.2,
+        carbs: 25.3,
+        fat: 6.8,
+        vitaminA: 4,
+        vitaminC: 8,
+        serving: "100g"
+      },
+      {
+        name: "Lumpia (2 pieces)",
+        calories: 150,
+        protein: 6.5,
+        carbs: 13.2,
+        fat: 8.5,
+        vitaminA: 3,
+        vitaminC: 2,
+        serving: "2 pieces"
+      },
+      {
+        name: "Longganisa (100g)",
+        calories: 297,
+        protein: 10.8,
+        carbs: 2.5,
+        fat: 26.3,
+        vitaminA: 1,
+        vitaminC: 0,
+        serving: "100g"
+      },
+      {
+        name: "Pandesal (1 piece)",
+        calories: 100,
+        protein: 3.5,
+        carbs: 18.6,
+        fat: 1.8,
+        vitaminA: 0,
+        vitaminC: 0,
+        serving: "1 piece"
+      },
+      {
+        name: "Lechon Kawali (100g)",
+        calories: 387,
+        protein: 29.3,
+        carbs: 0,
+        fat: 30.2,
+        vitaminA: 0,
+        vitaminC: 0,
+        serving: "100g"
+      },
+      {
+        name: "Crispy Pata (100g)",
+        calories: 425,
+        protein: 30.1,
+        carbs: 0.5,
+        fat: 34.2,
+        vitaminA: 0,
+        vitaminC: 0,
+        serving: "100g"
+      },
+      {
+        name: "Halo-Halo (1 cup)",
+        calories: 240,
+        protein: 4.2,
+        carbs: 42.5,
+        fat: 6.3,
+        vitaminA: 8,
+        vitaminC: 15,
+        serving: "1 cup"
+      },
+      {
+        name: "Banana (Saba, 1 piece)",
+        calories: 122,
+        protein: 1.2,
+        carbs: 31.5,
+        fat: 0.4,
+        vitaminA: 3,
+        vitaminC: 12,
+        serving: "1 piece"
+      },
+      {
+        name: "Mango (1 cup, sliced)",
+        calories: 107,
+        protein: 0.8,
+        carbs: 28.1,
+        fat: 0.4,
+        vitaminA: 25,
+        vitaminC: 75,
+        serving: "1 cup"
+      },
+      {
+        name: "Kare-Kare (100g)",
+        calories: 205,
+        protein: 14.5,
+        carbs: 8.2,
+        fat: 12.8,
+        vitaminA: 12,
+        vitaminC: 5,
+        serving: "100g"
+      },
+      {
+        name: "Tocino (100g)",
+        calories: 230,
+        protein: 12.3,
+        carbs: 16.5,
+        fat: 13.2,
+        vitaminA: 0,
+        vitaminC: 0,
+        serving: "100g"
+      },
+      {
+        name: "Tinola (100g)",
+        calories: 110,
+        protein: 15.2,
+        carbs: 4.3,
+        fat: 3.8,
+        vitaminA: 18,
+        vitaminC: 15,
+        serving: "100g"
+      }
+    ];
+    
+    // Daily recommended values
+    const dailyRecommended = {
+      calories: 2000,
+      protein: 50,
+      carbs: 300,
+      fat: 65,
+      vitaminA: 100, // in percentage
+      vitaminC: 100  // in percentage
+    };
+    
+    // State management
+    let mealPlan = {
+      breakfast: [],
+      lunch: [],
+      dinner: []
+    };
+    
+    // DOM Elements
+    const foodSearchInput = document.getElementById('food-search-input');
+    const searchFoodBtn = document.getElementById('search-food-btn');
+    const foodItemsContainer = document.getElementById('food-items-container');
+    const breakfastFoods = document.getElementById('breakfast-foods');
+    const lunchFoods = document.getElementById('lunch-foods');
+    const dinnerFoods = document.getElementById('dinner-foods');
+    
+    // Summary elements
+    const caloriesValue = document.getElementById('calories-value');
+    const proteinValue = document.getElementById('protein-value');
+    const carbsValue = document.getElementById('carbs-value');
+    const fatValue = document.getElementById('fat-value');
+    const vitaminAValue = document.getElementById('vitamin-a-value');
+    const vitaminCValue = document.getElementById('vitamin-c-value');
+    
+    // Progress bars
+    const caloriesProgress = document.getElementById('calories-progress');
+    const proteinProgress = document.getElementById('protein-progress');
+    const carbsProgress = document.getElementById('carbs-progress');
+    const fatProgress = document.getElementById('fat-progress');
+    const vitaminAProgress = document.getElementById('vitamin-a-progress');
+    const vitaminCProgress = document.getElementById('vitamin-c-progress');
+    
+    // Initialize nutrition chart
+    const ctx = document.getElementById('nutrition-chart').getContext('2d');
+    const nutritionChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Calories', 'Protein', 'Carbs', 'Fat', 'Vitamin A', 'Vitamin C'],
+        datasets: [{
+          label: 'Current Intake (%)',
+          data: [0, 0, 0, 0, 0, 0],
+          backgroundColor: 'rgba(93, 155, 108, 0.2)',
+          borderColor: 'rgba(93, 155, 108, 1)',
+          pointBackgroundColor: 'rgba(93, 155, 108, 1)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgba(93, 155, 108, 1)'
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            angleLines: {
+              display: true
+            },
+            suggestedMin: 0,
+            suggestedMax: 100,
+            ticks: {
+              stepSize: 25
+            }
+          }
+        }
+      }
+    });
+    
+    // Search functionality
+    searchFoodBtn.addEventListener('click', searchFood);
+    foodSearchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchFood();
+      }
+    });
+    
+    function searchFood() {
+      const searchQuery = foodSearchInput.value.toLowerCase().trim();
+      
+      if (searchQuery === '') {
+        displayAllFoods();
+        return;
+      }
+      
+      const filteredFoods = filipinoFoods.filter(food => 
+        food.name.toLowerCase().includes(searchQuery)
+      );
+      
+      displayFoods(filteredFoods);
+    }
+    
+    function displayAllFoods() {
+      displayFoods(filipinoFoods);
+    }
+    
+    function displayFoods(foods) {
+      foodItemsContainer.innerHTML = '';
+      
+      if (foods.length === 0) {
+        foodItemsContainer.innerHTML = '<p>No foods found. Try another search term.</p>';
+        return;
+      }
+      
+      foods.forEach(food => {
+        const foodItem = document.createElement('div');
+        foodItem.className = 'food-item';
+        foodItem.draggable = true;
+        foodItem.dataset.food = JSON.stringify(food);
+        
+        foodItem.innerHTML = `
+          <div class="food-item-details">
+            <div class="food-item-name">${food.name}</div>
+            <span>${food.calories} kcal | P: ${food.protein}g | C: ${food.carbs}g | F: ${food.fat}g</span>
+          </div>
+          <button class="add-btn">+</button>
+        `;
+        
+        // Add drag events
+        foodItem.addEventListener('dragstart', handleDragStart);
+        foodItem.addEventListener('dragend', handleDragEnd);
+        
+        // Add button click event
+        const addBtn = foodItem.querySelector('.add-btn');
+        addBtn.addEventListener('click', function() {
+          // Default to adding to breakfast if clicked
+          addFoodToMeal('breakfast', food);
+        });
+        
+        foodItemsContainer.appendChild(foodItem);
+      });
+    }
+    
+    // Initialize with all foods
+    displayAllFoods();
+    
+    // Drag and Drop functionality
+    function handleDragStart(e) {
+      this.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', this.dataset.food);
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+    
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+    }
+    
+    // Set up drop zones
+    [breakfastFoods, lunchFoods, dinnerFoods].forEach(container => {
+      container.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+      
+      container.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('text/plain');
+        try {
+          const food = JSON.parse(data);
+          let mealType;
+          
+          if (this === breakfastFoods) mealType = 'breakfast';
+          else if (this === lunchFoods) mealType = 'lunch';
+          else mealType = 'dinner';
+          
+          addFoodToMeal(mealType, food);
+        } catch (err) {
+          console.error('Error parsing dragged food data:', err);
+        }
+      });
+    });
+    
+    // Add food to meal
+    function addFoodToMeal(mealType, food) {
+      // Add to state
+      mealPlan[mealType].push(food);
+      
+      // Create UI element
+      const mealFoodItem = document.createElement('div');
+      mealFoodItem.className = 'meal-food-item';
+      
+      mealFoodItem.innerHTML = `
+        <div>
+          <div>${food.name}</div>
+          <small>${food.calories} kcal</small>
+        </div>
+        <button class="remove-btn">×</button>
+      `;
+      
+      // Add remove button functionality
+      const removeBtn = mealFoodItem.querySelector('.remove-btn');
+      removeBtn.addEventListener('click', function() {
+        const index = mealPlan[mealType].findIndex(f => f.name === food.name);
+        if (index !== -1) {
+          mealPlan[mealType].splice(index, 1);
+          mealFoodItem.remove();
+          updateNutritionSummary();
+        }
+      });
+      
+      // Add to appropriate container
+      document.getElementById(`${mealType}-foods`).appendChild(mealFoodItem);
+      
+      // Update summary
+      updateNutritionSummary();
+    }
+    
+    // Update nutrition summary
+    function updateNutritionSummary() {
+      // Calculate totals
+      let totalCalories = 0;
+      let totalProtein = 0;
+      let totalCarbs = 0;
+      let totalFat = 0;
+      let totalVitaminA = 0;
+      let totalVitaminC = 0;
+      
+      // Combine all meals
+      const allFoods = [
+        ...mealPlan.breakfast,
+        ...mealPlan.lunch,
+        ...mealPlan.dinner
+      ];
+      
+      // Sum up nutritional values
+      allFoods.forEach(food => {
+        totalCalories += food.calories;
+        totalProtein += food.protein;
+        totalCarbs += food.carbs;
+        totalFat += food.fat;
+        totalVitaminA += food.vitaminA;
+        totalVitaminC += food.vitaminC;
+      });
+      
+      // Update summary text
+      caloriesValue.textContent = Math.round(totalCalories);
+      proteinValue.textContent = `${totalProtein.toFixed(1)}g`;
+      carbsValue.textContent = `${totalCarbs.toFixed(1)}g`;
+      fatValue.textContent = `${totalFat.toFixed(1)}g`;
+      vitaminAValue.textContent = `${totalVitaminA}%`;
+      vitaminCValue.textContent = `${totalVitaminC}%`;
+      
+      // Calculate percentages of daily recommended values
+      const caloriesPercent = (totalCalories / dailyRecommended.calories) * 100;
+      const proteinPercent = (totalProtein / dailyRecommended.protein) * 100;
+      const carbsPercent = (totalCarbs / dailyRecommended.carbs) * 100;
+      const fatPercent = (totalFat / dailyRecommended.fat) * 100;
+      const vitaminAPercent = totalVitaminA;
+      const vitaminCPercent = totalVitaminC;
+      
+      // Update progress bars
+      updateProgressBar(caloriesProgress, caloriesPercent);
+      updateProgressBar(proteinProgress, proteinPercent);
+      updateProgressBar(carbsProgress, carbsPercent);
+      updateProgressBar(fatProgress, fatPercent);
+      updateProgressBar(vitaminAProgress, vitaminAPercent);
+      updateProgressBar(vitaminCProgress, vitaminCPercent);
+      
+      // Update the nutrition chart
+      nutritionChart.data.datasets[0].data = [
+        Math.min(caloriesPercent, 100),
+        Math.min(proteinPercent, 100),
+        Math.min(carbsPercent, 100),
+        Math.min(fatPercent, 100),
+        Math.min(vitaminAPercent, 100),
+        Math.min(vitaminCPercent, 100)
+      ];
+      nutritionChart.update();
+    }
+    
+    // Update progress bar
+    function updateProgressBar(progressBar, percent) {
+      const clampedPercent = Math.min(Math.max(percent, 0), 100);
+      progressBar.style.width = `${clampedPercent}%`;
+      
+      // Add/remove 'over' class if exceeding 100%
+      if (percent > 100) {
+        progressBar.classList.add('over');
+      } else {
+        progressBar.classList.remove('over');
+      }
+    }
+// Add a "Suggestions" section to your HTML, right after the nutrition summary
+function addSuggestionSection() {
+  const mainContent = document.querySelector('.main-content');
+  
+  const suggestionSection = document.createElement('div');
+  suggestionSection.className = 'nutrition-summary';
+  suggestionSection.innerHTML = `
+    <h3>Food Suggestions</h3>
+    <p>Add these foods to complete your daily nutritional needs:</p>
+    <div id="suggestion-container" class="food-items"></div>
+    <button id="refresh-suggestions" class="search-btn" style="max-width: 200px; margin-top: 1rem;">Refresh Suggestions</button>
+  `;
+  
+  mainContent.appendChild(suggestionSection);
+  
+  // Add event listener to the refresh button
+  document.getElementById('refresh-suggestions').addEventListener('click', generateSuggestions);
+}
+
+// Generate suggestions based on nutritional gaps
+function generateSuggestions() {
+  // Calculate current nutritional totals
+  const nutritionTotals = calculateNutritionTotals();
+  
+  // Calculate missing nutrients (as percentages of daily recommended)
+  const missingNutrients = {
+    calories: Math.max(0, (1 - nutritionTotals.calories / dailyRecommended.calories) * 100),
+    protein: Math.max(0, (1 - nutritionTotals.protein / dailyRecommended.protein) * 100),
+    carbs: Math.max(0, (1 - nutritionTotals.carbs / dailyRecommended.carbs) * 100),
+    fat: Math.max(0, (1 - nutritionTotals.fat / dailyRecommended.fat) * 100),
+    vitaminA: Math.max(0, 100 - nutritionTotals.vitaminA),
+    vitaminC: Math.max(0, 100 - nutritionTotals.vitaminC)
+  };
+  
+  // Determine which nutrients are most deficient (>20% missing)
+  const deficientNutrients = Object.entries(missingNutrients)
+    .filter(([_, value]) => value > 20)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key]) => key);
+  
+  // If all nutrients are satisfied, show a success message
+  if (deficientNutrients.length === 0) {
+    document.getElementById('suggestion-container').innerHTML = `
+      <div class="meal-food-item" style="background-color: var(--success); color: white;">
+        <div>Great job! You've met your daily nutritional goals.</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Score each food based on how well it addresses deficient nutrients
+  const scoredFoods = filipinoFoods.map(food => {
+    let score = 0;
+    
+    // Calculate how much this food contributes to each deficient nutrient
+    deficientNutrients.forEach(nutrient => {
+      const missingAmount = missingNutrients[nutrient];
+      
+      if (nutrient === 'calories') {
+        score += (food.calories / dailyRecommended.calories * 100) / missingAmount;
+      } else if (nutrient === 'protein') {
+        score += (food.protein / dailyRecommended.protein * 100) / missingAmount;
+      } else if (nutrient === 'carbs') {
+        score += (food.carbs / dailyRecommended.carbs * 100) / missingAmount;
+      } else if (nutrient === 'fat') {
+        score += (food.fat / dailyRecommended.fat * 100) / missingAmount;
+      } else if (nutrient === 'vitaminA') {
+        score += food.vitaminA / missingAmount;
+      } else if (nutrient === 'vitaminC') {
+        score += food.vitaminC / missingAmount;
+      }
+    });
+    
+    // Normalize by number of deficient nutrients
+    score = score / deficientNutrients.length;
+    
+    return { ...food, score };
+  });
+  
+  // Get top 3 recommendations
+  const recommendations = scoredFoods
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  // Display recommendations
+  const suggestionContainer = document.getElementById('suggestion-container');
+  suggestionContainer.innerHTML = '';
+  
+  recommendations.forEach(food => {
+    const foodItem = document.createElement('div');
+    foodItem.className = 'food-item';
+    foodItem.innerHTML = `
+      <div class="food-item-details">
+        <div class="food-item-name">${food.name}</div>
+        <span>${food.calories} kcal | P: ${food.protein}g | C: ${food.carbs}g | F: ${food.fat}g</span>
+        <span>Vitamin A: ${food.vitaminA}% | Vitamin C: ${food.vitaminC}%</span>
+      </div>
+      <div>
+        <button class="add-btn" data-meal="breakfast">B</button>
+        <button class="add-btn" data-meal="lunch">L</button>
+        <button class="add-btn" data-meal="dinner">D</button>
+      </div>
+    `;
+    
+    // Add event listeners to the add buttons
+    const addButtons = foodItem.querySelectorAll('.add-btn');
+    addButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const mealType = this.dataset.meal;
+        addFoodToMeal(mealType, food);
+        generateSuggestions(); // Refresh suggestions after adding
+      });
+    });
+    
+    suggestionContainer.appendChild(foodItem);
+  });
+  
+  // Add explanation of which nutrients are missing
+  const explanation = document.createElement('div');
+  explanation.className = 'food-database-note';
+  explanation.style.marginTop = '1rem';
+  
+  // Create a readable list of deficient nutrients
+  const nutrientNames = {
+    calories: 'Calories',
+    protein: 'Protein',
+    carbs: 'Carbohydrates',
+    fat: 'Fat',
+    vitaminA: 'Vitamin A',
+    vitaminC: 'Vitamin C'
+  };
+  
+  const deficientList = deficientNutrients
+    .map(nutrient => nutrientNames[nutrient])
+    .join(', ');
+  
+  explanation.textContent = `You're low on: ${deficientList}`;
+  suggestionContainer.appendChild(explanation);
+}
+
+// Helper function to calculate current nutrition totals
+function calculateNutritionTotals() {
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+  let totalVitaminA = 0;
+  let totalVitaminC = 0;
+  
+  // Combine all meals
+  const allFoods = [
+    ...mealPlan.breakfast,
+    ...mealPlan.lunch,
+    ...mealPlan.dinner
+  ];
+  
+  // Sum up nutritional values
+  allFoods.forEach(food => {
+    totalCalories += food.calories;
+    totalProtein += food.protein;
+    totalCarbs += food.carbs;
+    totalFat += food.fat;
+    totalVitaminA += food.vitaminA;
+    totalVitaminC += food.vitaminC;
+  });
+  
+  return {
+    calories: totalCalories,
+    protein: totalProtein,
+    carbs: totalCarbs,
+    fat: totalFat,
+    vitaminA: totalVitaminA,
+    vitaminC: totalVitaminC
+  };
+}
+// Initialize the suggestion section when the page loads
+window.addEventListener('DOMContentLoaded', function() {
+  addSuggestionSection();
+  generateSuggestions();
+  
+  // Initialize budget tracker functionality
+  addBudgetTrackerSection();
+  addBudgetTrackerStyles();
+});
+
+// Add Budget Tracker section to the HTML
+function addBudgetTrackerSection() {
+  const appContainer = document.querySelector('.app-container');
+  
+  // Create budget tracker container
+  const budgetTrackerSection = document.createElement('div');
+  budgetTrackerSection.className = 'budget-tracker';
+  budgetTrackerSection.innerHTML = `
+    <h2>Food Budget Tracker</h2>
+    <div class="budget-form">
+      <div class="budget-input-group">
+        <label for="expense-name">Food Item:</label>
+        <input type="text" id="expense-name" placeholder="e.g., Rice, Groceries">
+      </div>
+      <div class="budget-input-group">
+        <label for="expense-amount">Amount (₱):</label>
+        <input type="number" id="expense-amount" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="budget-input-group">
+        <label for="expense-date">Date:</label>
+        <input type="date" id="expense-date">
+      </div>
+      <div class="budget-input-group">
+        <label for="expense-category">Category:</label>
+        <select id="expense-category">
+          <option value="groceries">Groceries</option>
+          <option value="dining-out">Dining Out</option>
+          <option value="market">Market</option>
+          <option value="snacks">Snacks</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button id="add-expense-btn" class="search-btn">Add Expense</button>
+    </div>
+    
+    <div class="budget-summary">
+      <div class="summary-item">
+        <h4>Total Expenses</h4>
+        <div class="summary-value" id="total-expenses">₱0.00</div>
+      </div>
+      <div class="summary-item">
+        <h4>Weekly Average</h4>
+        <div class="summary-value" id="weekly-average">₱0.00</div>
+      </div>
+      <div class="summary-item">
+        <h4>Monthly Budget</h4>
+        <div class="budget-input-inline">
+          <span>₱</span>
+          <input type="number" id="monthly-budget" placeholder="Set budget" min="0" step="100">
+          <button id="set-budget-btn">Set</button>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="budget-progress" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="expense-list-container">
+      <h3>Expense History</h3>
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="expense-list">
+          <!-- Expenses will be added here -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="chart-container">
+      <h3>Expense Breakdown</h3>
+      <canvas id="expense-chart"></canvas>
+    </div>
+  `;
+  
+  // Insert the budget tracker after the main app container
+  appContainer.parentNode.insertBefore(budgetTrackerSection, appContainer.nextSibling);
+  
+  // Add event listeners
+  document.getElementById('add-expense-btn').addEventListener('click', addExpense);
+  document.getElementById('set-budget-btn').addEventListener('click', setMonthlyBudget);
+  
+  // Set today's date as default in the date input
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('expense-date').value = today;
+  
+  // Initialize expense chart
+  initializeExpenseChart();
+  
+  // Load saved expenses from local storage
+  loadExpenses();
+}
+
+// Initialize expense data
+let expenses = [];
+let monthlyBudget = 0;
+
+// Add new expense
+function addExpense() {
+  const nameInput = document.getElementById('expense-name');
+  const amountInput = document.getElementById('expense-amount');
+  const dateInput = document.getElementById('expense-date');
+  const categoryInput = document.getElementById('expense-category');
+  
+  const name = nameInput.value.trim();
+  const amount = parseFloat(amountInput.value);
+  const date = dateInput.value;
+  const category = categoryInput.value;
+  
+  // Validate inputs
+  if (!name || isNaN(amount) || amount <= 0 || !date) {
+    alert('Please fill in all fields with valid values.');
+    return;
+  }
+  
+  // Create expense object
+  const expense = {
+    id: Date.now(), // Use timestamp as ID
+    name,
+    amount,
+    date,
+    category
+  };
+  
+  // Add to expenses array
+  expenses.push(expense);
+  
+  // Clear inputs
+  nameInput.value = '';
+  amountInput.value = '';
+  dateInput.value = new Date().toISOString().split('T')[0]; // Reset to today
+  
+  // Update UI
+  updateExpenseList();
+  updateBudgetSummary();
+  updateExpenseChart();
+  
+  // Save to local storage
+  saveExpenses();
+}
+
+// Update expense list in UI
+function updateExpenseList() {
+  const expenseList = document.getElementById('expense-list');
+  expenseList.innerHTML = '';
+  
+  // Sort expenses by date (newest first)
+  const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  sortedExpenses.forEach(expense => {
+    const row = document.createElement('tr');
+    
+    // Format date
+    const formattedDate = new Date(expense.date).toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    row.innerHTML = `
+      <td>${formattedDate}</td>
+      <td>${expense.name}</td>
+      <td>${getCategoryLabel(expense.category)}</td>
+      <td>₱${expense.amount.toFixed(2)}</td>
+      <td>
+        <button class="remove-btn" data-id="${expense.id}">×</button>
+      </td>
+    `;
+    
+    // Add delete button functionality
+    const deleteBtn = row.querySelector('.remove-btn');
+    deleteBtn.addEventListener('click', () => {
+      deleteExpense(expense.id);
+    });
+    
+    expenseList.appendChild(row);
+  });
+}
+
+// Get readable category label
+function getCategoryLabel(category) {
+  const labels = {
+    'groceries': 'Groceries',
+    'dining-out': 'Dining Out',
+    'market': 'Market',
+    'snacks': 'Snacks',
+    'other': 'Other'
+  };
+  return labels[category] || category;
+}
+
+// Delete expense
+function deleteExpense(id) {
+  expenses = expenses.filter(expense => expense.id !== id);
+  updateExpenseList();
+  updateBudgetSummary();
+  updateExpenseChart();
+  saveExpenses();
+}
+
+// Update budget summary
+function updateBudgetSummary() {
+  const totalExpensesElement = document.getElementById('total-expenses');
+  const weeklyAverageElement = document.getElementById('weekly-average');
+  const budgetProgressElement = document.getElementById('budget-progress');
+  
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  totalExpensesElement.textContent = `₱${totalExpenses.toFixed(2)}`;
+  
+  // Calculate weekly average (based on expenses in the last 30 days)
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  const recentExpenses = expenses.filter(expense => new Date(expense.date) >= thirtyDaysAgo);
+  const recentTotal = recentExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const weeklyAverage = recentTotal / 4; // Approximate 4 weeks in a month
+  
+  weeklyAverageElement.textContent = `₱${weeklyAverage.toFixed(2)}`;
+  
+  // Update budget progress bar
+  if (monthlyBudget > 0) {
+    const percentage = (totalExpenses / monthlyBudget) * 100;
+    budgetProgressElement.style.width = `${Math.min(percentage, 100)}%`;
+    
+    // Change color if over budget
+    if (percentage > 100) {
+      budgetProgressElement.classList.add('over');
+    } else {
+      budgetProgressElement.classList.remove('over');
+    }
+  }
+}
+
+// Set monthly budget
+function setMonthlyBudget() {
+  const budgetInput = document.getElementById('monthly-budget');
+  const budget = parseFloat(budgetInput.value);
+  
+  if (isNaN(budget) || budget < 0) {
+    alert('Please enter a valid budget amount.');
+    return;
+  }
+  
+  monthlyBudget = budget;
+  updateBudgetSummary();
+  
+  // Save to local storage
+  localStorage.setItem('foodBudget', monthlyBudget);
+}
+
+// Initialize expense chart
+function initializeExpenseChart() {
+  const ctx = document.getElementById('expense-chart').getContext('2d');
+  window.expenseChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Groceries', 'Dining Out', 'Market', 'Snacks', 'Other'],
+      datasets: [{
+        data: [0, 0, 0, 0, 0],
+        backgroundColor: [
+          '#5d9b6c',
+          '#f8bc5a',
+          '#3d7c4c',
+          '#e74c3c',
+          '#2c3e50'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+}
+
+// Update expense chart
+function updateExpenseChart() {
+  // Calculate totals per category
+  const categoryTotals = {
+    'groceries': 0,
+    'dining-out': 0,
+    'market': 0,
+    'snacks': 0,
+    'other': 0
+  };
+  
+  expenses.forEach(expense => {
+    categoryTotals[expense.category] += expense.amount;
+  });
+  
+  // Update chart data
+  window.expenseChart.data.datasets[0].data = [
+    categoryTotals['groceries'],
+    categoryTotals['dining-out'],
+    categoryTotals['market'],
+    categoryTotals['snacks'],
+    categoryTotals['other']
+  ];
+  
+  window.expenseChart.update();
+}
+
+// Save expenses to local storage
+function saveExpenses() {
+  localStorage.setItem('foodExpenses', JSON.stringify(expenses));
+}
+
+// Load expenses from local storage
+function loadExpenses() {
+  const savedExpenses = localStorage.getItem('foodExpenses');
+  if (savedExpenses) {
+    expenses = JSON.parse(savedExpenses);
+    updateExpenseList();
+    updateBudgetSummary();
+    updateExpenseChart();
+  }
+  
+  const savedBudget = localStorage.getItem('foodBudget');
+  if (savedBudget) {
+    monthlyBudget = parseFloat(savedBudget);
+    document.getElementById('monthly-budget').value = monthlyBudget;
+    updateBudgetSummary();
+  }
+}
+
+// Add CSS for the budget tracker
+function addBudgetTrackerStyles() {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+    /* Budget Tracker Styles */
+    .budget-tracker {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .budget-tracker h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .budget-form {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .budget-input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .budget-input-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .budget-input-group input,
+    .budget-input-group select {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    #add-expense-btn {
+      grid-column: span 2;
+    }
+    
+    .budget-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .budget-input-inline {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .budget-input-inline input {
+      flex-grow: 1;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 0 0.5rem;
+    }
+    
+    .budget-input-inline button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .expense-list-container {
+      margin-bottom: 2rem;
+    }
+    
+    .expense-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .expense-table th,
+    .expense-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    
+    .expense-table th {
+      font-weight: 600;
+      background-color: #f5f7fa;
+    }
+
+    .expense-table .remove-btn {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+      .budget-form,
+      .budget-summary {
+        grid-template-columns: 1fr;
+      }
+      
+      #add-expense-btn {
+        grid-column: span 1;
+      }
+    }
+  `;
+  document.head.appendChild(styleElement);
+}
+</script>
+</body>
+</html>
